@@ -76,7 +76,11 @@ def AIPlayGomoku(nnA, nnB, idxA, idxB):
 
 def EvaluateFitness(genomes, config):
 
-    begintime = time.time()
+    # Save the best for every 20 generation
+    if pop.generation % 20 == 1:
+        with open(f'best#{pop.generation - 1}.pickle', "wb") as f:
+            pickle.dump(stats.best_genome(), f)
+
 
     for (id, genome) in genomes:
         genome.fitness = 0
@@ -91,13 +95,6 @@ def EvaluateFitness(genomes, config):
         for f in concurrent.futures.as_completed(results):
             (game, idxA, idxB) = f.result()
             ApplyFitness(game, genomes[idxA][1], genomes[idxB][1])
-
-    # Save the best for every 20 generation
-    if pop.generation % 20 == 5:
-        with open(f'best#{pop.generation}.pickle', "wb") as f:
-            pickle.dump(stats.best_genome(), f)
-
-    print('Total time for a generation is {0}'.format(time.time() - begintime))
     
         
 
@@ -105,12 +102,12 @@ def EvaluateFitness(genomes, config):
 def TrainAI(config):
     global pop, stats
     # Initailze neat
-    #pop = neat.Checkpointer.restore_checkpoint('neat-checkpoint-40')
-    pop = neat.Population(config)
+    pop = neat.Checkpointer.restore_checkpoint('neat-checkpoint-15')
+    #pop = neat.Population(config)
     pop.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     pop.add_reporter(stats)
-    pop.add_reporter(neat.Checkpointer(5))
+    pop.add_reporter(neat.Checkpointer(5, 10000))
     
     
     bestAI = pop.run(EvaluateFitness, 32)
@@ -190,8 +187,6 @@ def AIPlayAgainstAI(genomeA, genomeB, config):
         if len(occupied) == 361:
             return PieceState.NONE
         
-        
-
 
 
 def PlayerPlayAgainstAI(genome, config):
